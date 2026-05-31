@@ -10,8 +10,8 @@ import networkx as nx
 
 from Modelo.data_loader import cargar_red
 from Modelo.modelo_pl    import construir_modelo, resolver, CAMIONES, MERMA
-from Modelo.algoritmos  import (dijkstra, flujo_maximo,
-                                 cuellos_de_botella, tabla_rutas_optimas)
+from Modelo.algoritmos  import (dijkstra, flujo_maximo,cuellos_de_botella, tabla_rutas_optimas)
+from Modelo.escenarios import (escenario_combustible,escenario_cierre_via,escenario_falla_calidad)
 import pulp
 
 # ─── Configuración ────────────────────────────────────────────────────────────
@@ -27,7 +27,14 @@ def get_red():
     return cargar_red()
 
 G = get_red()
-
+todos_nodos   = {d["nombre"]: n for n, d in G.nodes(data=True)}
+nodos_fuente  = sorted(d["nombre"] for _, d in G.nodes(data=True) if d["tipo"] in ("origen", "acopio"))
+nombres_lista = sorted(todos_nodos.keys())
+def id_por_nombre(nombre):
+    for nid, d in G.nodes(data=True):
+        if d["nombre"] == nombre:
+            return nid
+    return None
 TIPO_COLOR = {"origen": "#1D9E75", "acopio": "#7F77DD", "destino": "#D85A30"}
 
 # ─── Sidebar: navegación ──────────────────────────────────────────────────────
@@ -38,6 +45,7 @@ pagina = st.sidebar.radio("Navegar", [
     "🗺️ Grafo de la Red",
     "⚙️ Optimización PL",
     "🔍 Algoritmos de Grafos",
+    "🧪 Escenarios What-If",
 ])
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -339,10 +347,6 @@ elif pagina == "🔍 Algoritmos de Grafos":
 
     tab1, tab2, tab3 = st.tabs(["Dijkstra", "Flujo Máximo", "Cuellos de Botella"])
 
-    todos_nodos   = {d["nombre"]: n for n, d in G.nodes(data=True)}
-    nodos_fuente  = sorted(d["nombre"] for _, d in G.nodes(data=True) if d["tipo"] in ("origen", "acopio"))
-    nombres_lista = sorted(todos_nodos.keys())
-
     # ── Dijkstra ──────────────────────────────────────────────────────────────
     with tab1:
         st.subheader("Ruta de menor costo — Dijkstra")
@@ -459,3 +463,201 @@ elif pagina == "🔍 Algoritmos de Grafos":
                     st.info("No se encontraron cuellos de botella entre estos nodos.")
             except Exception as e:
                 st.error(f"Error: {e}")
+
+elif pagina == "🧪 Escenarios What-If":
+    st.title("🧪 Análisis de Escenarios — What-If")
+    st.markdown("""
+    Modifica variables clave de la red y observa cómo cambia el costo óptimo.
+    El modelo se resuelve dos veces: **base** y **con el escenario**, y se comparan los resultados.
+    """)
+ 
+    # ── Resolver base primero ─────────────────────────────────────────────────
+    st.info("⚙️ Primero se resuelve el modelo base para tener un punto de comparación.")
+    if st.button("▶ Resolver modelo base", type="primary", key="btn_base_esc"):
+        with st.spinner("Resolviendo modelo base..."):
+            modelo_b, x_b, n_b = construir_modelo(G)
+            st.session_state["resultado_base"] = resolver(G, modelo_b, x_b, n_b)
+        st.success(f"Base resuelta — Costo: ${st.session_state['resultado_base']['costo_total']:,.0f} COP")
+ 
+    if "resultado_base" not in st.session_state:
+        st.warning("Resuelve el modelo base primero para poder comparar escenarios.")
+        st.stop()
+ 
+    resultado_base = st.session_state["resultado_base"]
+    st.metric("Costo base actual", f"${resultado_base['costo_total']:,.0f} COP")
+ 
+    st.divider()
+    tab1, tab2, tab3 = st.tabs([
+        "🔥 Alza de combustible",
+        "🚧 Cierre de vía",
+        "🐟 Falla de calidad",
+    ])
+ 
+    # ── Tab 1: Combustible ────────────────────────────────────────────────────
+    with tab1:
+        st.subheader("Escenario 1 — Alza de combustible en rutas del Meta")
+        st.markdown("""
+        **¿Qué simula?** Un incremento en el precio del combustible afecta
+        directamente el costo de transporte en las rutas que salen de las
+        pisciculturas del Meta y circulan por sus acopios
+        (Villavicencio, Paratebueno, Yopal).
+        """)
+ 
+        pct_combustible = st.slider(
+            "Incremento en el precio del combustible (%)",
+            min_value=5, max_value=50, value=15, step=5,
+            key="sl_comb"
+        )
+        factor = 1 + pct_combustible / 100
+ 
+        if st.button("Simular alza de combustible", key="btn_comb"):
+            with st.spinner("Resolviendo escenario..."):
+                from Modelo.escenarios import escenario_combustible
+                r = escenario_combustible(G, construir_modelo, resolver,
+                                          resultado_base, factor)
+ 
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Costo base",       f"${r.costo_base:,.0f} COP")
+            c2.metric("Costo escenario",  f"${r.costo_escenario:,.0f} COP",
+                      delta=f"+${r.diferencia:,.0f}" if r.diferencia >= 0
+                            else f"-${abs(r.diferencia):,.0f}")
+            c3.metric("Incremento",       f"{r.porcentaje:+.2f}%")
+ 
+            st.info(r.descripcion)
+ 
+            if r.estado_escenario == "Optimal":
+                st.subheader("Comparación de rutas activas")
+                col_b, col_e = st.columns(2)
+                with col_b:
+                    st.markdown("**Plan base**")
+                    st.dataframe(r.df_base[["origen","destino","camion","toneladas","costo_ruta_COP"]],
+                                 hide_index=True, use_container_width=True)
+                with col_e:
+                    st.markdown("**Plan con alza de combustible**")
+                    st.dataframe(r.df_escenario[["origen","destino","camion","toneladas","costo_ruta_COP"]],
+                                 hide_index=True, use_container_width=True)
+ 
+                # Gráfica comparativa
+                fig, ax = plt.subplots(figsize=(6, 3))
+                ax.bar(["Base", f"+{pct_combustible}% combustible"],
+                       [r.costo_base, r.costo_escenario],
+                       color=["#1D9E75", "#D85A30"])
+                ax.set_ylabel("Costo total ($)")
+                ax.yaxis.set_major_formatter(
+                    plt.FuncFormatter(lambda v,_: f"${v/1_000_000:.2f}M"))
+                ax.spines[["top","right"]].set_visible(False)
+                st.pyplot(fig)
+                plt.close()
+            else:
+                st.error(f"⚠️ Estado del solver: {r.estado_escenario}")
+ 
+    # ── Tab 2: Cierre de vía ──────────────────────────────────────────────────
+    with tab2:
+        st.subheader("Escenario 2 — Cierre de una vía principal")
+        st.markdown("""
+        **¿Qué simula?** El cierre de una ruta por derrumbe, inundación u otro
+        evento elimina esa arista del grafo. El modelo busca rutas alternativas
+        y muestra cuánto más caro resulta o si la red queda infactible.
+        """)
+ 
+        # Selector de arista: solo mostrar rutas entre acopios (las más críticas)
+        aristas_acopio = [
+            (u, v) for u, v in G.edges()
+            if G.nodes[u]["tipo"] in ["origen","acopio"]
+            and G.nodes[v]["tipo"] in ["acopio"]
+        ]
+        opciones_aristas = {
+            f"{G.nodes[u]['nombre']} → {G.nodes[v]['nombre']}": (u, v)
+            for u, v in aristas_acopio
+        }
+        arista_sel = st.selectbox(
+            "Selecciona la vía a cerrar",
+            list(opciones_aristas.keys()),
+            key="sel_via"
+        )
+ 
+        if st.button("Simular cierre de vía", key="btn_via"):
+            arista_ids = opciones_aristas[arista_sel]
+            with st.spinner("Resolviendo escenario..."):
+                from Modelo.escenarios import escenario_cierre_via
+                r = escenario_cierre_via(G, construir_modelo, resolver,
+                                         resultado_base, arista_ids)
+ 
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Costo base",      f"${r.costo_base:,.0f} COP")
+            if r.estado_escenario == "Optimal":
+                c2.metric("Costo escenario", f"${r.costo_escenario:,.0f} COP",
+                          delta=f"+${r.diferencia:,.0f}")
+                c3.metric("Incremento",      f"{r.porcentaje:+.2f}%")
+                st.info(r.descripcion)
+ 
+                col_b, col_e = st.columns(2)
+                with col_b:
+                    st.markdown("**Plan base**")
+                    st.dataframe(r.df_base[["origen","destino","camion","toneladas"]],
+                                 hide_index=True, use_container_width=True)
+                with col_e:
+                    st.markdown("**Plan con vía cerrada**")
+                    st.dataframe(r.df_escenario[["origen","destino","camion","toneladas"]],
+                                 hide_index=True, use_container_width=True)
+            else:
+                c2.metric("Estado", r.estado_escenario)
+                c3.metric("Impacto", "RED INFACTIBLE")
+                st.error(r.descripcion)
+ 
+    # ── Tab 3: Falla de calidad ───────────────────────────────────────────────
+    with tab3:
+        st.subheader("Escenario 3 — Falla masiva de calidad en un acopio")
+        st.markdown("""
+        **¿Qué simula?** Una inspección sanitaria detecta problemas en un centro
+        de acopio y obliga a reducir su capacidad operativa. El modelo redistribuye
+        el flujo hacia otros acopios disponibles.
+        """)
+ 
+        nom_acopios_lista = nombres_lista("acopio")
+        acopio_sel = st.selectbox("Centro de acopio afectado",
+                                   nom_acopios_lista, key="sel_acopio")
+        perdida_pct = st.slider("Pérdida de capacidad (%)",
+                                 min_value=10, max_value=80,
+                                 value=40, step=10, key="sl_calidad")
+ 
+        if st.button("Simular falla de calidad", key="btn_calidad"):
+            acopio_id = id_por_nombre(acopio_sel)
+            with st.spinner("Resolviendo escenario..."):
+                from Modelo.escenarios import escenario_falla_calidad
+                r = escenario_falla_calidad(G, construir_modelo, resolver,
+                                             resultado_base,
+                                             acopio_id, perdida_pct / 100)
+ 
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Costo base",      f"${r.costo_base:,.0f} COP")
+            if r.estado_escenario == "Optimal":
+                c2.metric("Costo escenario", f"${r.costo_escenario:,.0f} COP",
+                          delta=f"+${r.diferencia:,.0f}")
+                c3.metric("Incremento",      f"{r.porcentaje:+.2f}%")
+                st.info(r.descripcion)
+ 
+                col_b, col_e = st.columns(2)
+                with col_b:
+                    st.markdown("**Plan base**")
+                    st.dataframe(r.df_base[["origen","destino","camion","toneladas"]],
+                                 hide_index=True, use_container_width=True)
+                with col_e:
+                    st.markdown(f"**Plan con falla en {acopio_sel}**")
+                    st.dataframe(r.df_escenario[["origen","destino","camion","toneladas"]],
+                                 hide_index=True, use_container_width=True)
+ 
+                fig, ax = plt.subplots(figsize=(6, 3))
+                ax.bar(["Base", f"Falla {perdida_pct}% en {acopio_sel}"],
+                       [r.costo_base, r.costo_escenario],
+                       color=["#1D9E75", "#D85A30"])
+                ax.set_ylabel("Costo total ($)")
+                ax.yaxis.set_major_formatter(
+                    plt.FuncFormatter(lambda v,_: f"${v/1_000_000:.2f}M"))
+                ax.spines[["top","right"]].set_visible(False)
+                st.pyplot(fig)
+                plt.close()
+            else:
+                c2.metric("Estado", r.estado_escenario)
+                c3.metric("Impacto", "RED INFACTIBLE")
+                st.error(r.descripcion)
