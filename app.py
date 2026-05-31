@@ -30,6 +30,9 @@ G = get_red()
 todos_nodos   = {d["nombre"]: n for n, d in G.nodes(data=True)}
 nodos_fuente  = sorted(d["nombre"] for _, d in G.nodes(data=True) if d["tipo"] in ("origen", "acopio"))
 nombres_lista = sorted(todos_nodos.keys())
+def nombres_tipo(tipo):
+    return sorted([d["nombre"] for _, d in G.nodes(data=True) if d["tipo"] == tipo])
+
 def id_por_nombre(nombre):
     for nid, d in G.nodes(data=True):
         if d["nombre"] == nombre:
@@ -347,6 +350,7 @@ elif pagina == "🔍 Algoritmos de Grafos":
 
     tab1, tab2, tab3 = st.tabs(["Dijkstra", "Flujo Máximo", "Cuellos de Botella"])
 
+
     # ── Dijkstra ──────────────────────────────────────────────────────────────
     with tab1:
         st.subheader("Ruta de menor costo — Dijkstra")
@@ -614,7 +618,7 @@ elif pagina == "🧪 Escenarios What-If":
         el flujo hacia otros acopios disponibles.
         """)
  
-        nom_acopios_lista = nombres_lista("acopio")
+        nom_acopios_lista = nombres_tipo("acopio")
         acopio_sel = st.selectbox("Centro de acopio afectado",
                                    nom_acopios_lista, key="sel_acopio")
         perdida_pct = st.slider("Pérdida de capacidad (%)",
