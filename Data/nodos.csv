@@ -1,0 +1,54 @@
+id,nombre,tipo,capacidad_ton,demanda_ton,departamento,nodo_grafo
+O1,Fusagasugá,origen,100,0,Cundinamarca,3
+O2,Pto. Salgar,origen,90,0,Cundinamarca,8
+O3,Chocontá,origen,80,0,Cundinamarca,10
+O4,Pto. Gaitán,origen,95,0,Meta,14
+O5,Pto. Concordia,origen,95,0,Meta,15
+O6,Granada,origen,110,0,Meta,16
+A1,Pto. Asís,acopio,140,0,Putumayo,1
+A2,Neiva,acopio,180,0,Huila,2
+A3,Cali,acopio,220,0,Valle del Cauca,4
+A4,Quibdó,acopio,160,0,Chocó,5
+A5,Medellín,acopio,250,0,Antioquia,6
+A6,Bogotá,acopio,400,0,Cundinamarca,7
+A7,Bucaramanga,acopio,200,0,Santander,9
+A8,Paratebueno,acopio,150,0,Cundinamarca,11
+A9,Yopal,acopio,160,0,Casanare,12
+A10,Villavicencio,acopio,300,0,Meta,13
+D1,Supertiendas Olímpica Bogotá Norte,destino,0,18,Cundinamarca,
+D2,Carulla Cedritos,destino,0,12,Cundinamarca,
+D3,Éxito Bosa,destino,0,15,Cundinamarca,
+D4,Jumbo Calle 80,destino,0,20,Cundinamarca,
+D5,Mercadefam Suba,destino,0,10,Cundinamarca,
+D6,Éxito Medellín Poblado,destino,0,14,Antioquia,
+D7,Jumbo Laureles Medellín,destino,0,11,Antioquia,
+D8,Carulla El Tesoro,destino,0,13,Antioquia,
+D9,Supertiendas Bucaramanga Centro,destino,0,12,Santander,
+D10,Éxito Bucaramanga Cabecera,destino,0,10,Santander,
+D11,Jumbo Cali Sur,destino,0,16,Valle del Cauca,
+D12,Carulla Cali Norte,destino,0,12,Valle del Cauca,
+D13,Éxito Chipichape,destino,0,14,Valle del Cauca,
+D14,Supertiendas Villavicencio Centro,destino,0,15,Meta,
+D15,Éxito Villavicencio,destino,0,18,Meta,
+D16,Mercados Llano Villavicencio,destino,0,12,Meta,
+D17,Supertiendas Yopal Centro,destino,0,10,Casanare,
+D18,Éxito Yopal,destino,0,12,Casanare,
+D19,Mercado Ganadero Yopal,destino,0,8,Casanare,
+D20,Supertiendas Paratebueno,destino,0,8,Cundinamarca,
+D21,Mercado Paratebueno,destino,0,6,Cundinamarca,
+D22,Supertiendas Pto. Asís,destino,0,10,Putumayo,
+D23,Mercado Central Pto. Asís,destino,0,8,Putumayo,
+D24,Supertiendas Neiva Centro,destino,0,12,Huila,
+D25,Éxito Neiva,destino,0,10,Huila,
+D26,Mercado Fusagasugá Centro,destino,0,8,Cundinamarca,
+D27,Supertiendas Fusagasugá,destino,0,6,Cundinamarca,
+D28,Mercado Pto. Salgar Central,destino,0,7,Cundinamarca,
+D29,Supertiendas Pto. Salgar,destino,0,5,Cundinamarca,
+D30,Mercado Chocontá Central,destino,0,6,Cundinamarca,
+D31,Supertiendas Chocontá,destino,0,5,Cundinamarca,
+D32,Mercado Pto. Gaitán Central,destino,0,7,Meta,
+D33,Supertiendas Pto. Gaitán,destino,0,5,Meta,
+D34,Mercado Pto. Concordia Central,destino,0,6,Meta,
+D35,Supertiendas Pto. Concordia,destino,0,5,Meta,
+D36,Mercado Granada Central,destino,0,8,Meta,
+D37,Supertiendas Granada,destino,0,6,Meta,

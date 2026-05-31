@@ -1,0 +1,65 @@
+origen,destino,distancia_km,costo_ton_km,capacidad_pequeño_ton,capacidad_grande_ton,bidireccional,notas
+A1,A2,350,2.5,5,15,si,Pto. Asís ↔ Neiva
+A2,A6,302,2.2,5,15,si,Neiva ↔ Bogotá
+O1,A2,170,2.0,5,15,no,Fusagasugá → Neiva
+O1,A6,72,1.3,5,15,no,Fusagasugá → Bogotá
+O1,A7,600,2.9,5,15,no,Fusagasugá → Bucaramanga
+O1,A3,480,2.7,5,15,no,Fusagasugá → Cali
+A3,A6,460,2.6,5,15,si,Cali ↔ Bogotá
+A3,A4,480,2.7,5,15,si,Cali ↔ Quibdó
+A4,A5,189,2.0,5,15,si,Quibdó ↔ Medellín
+A4,A6,630,2.8,5,15,si,Quibdó ↔ Bogotá
+A5,A6,420,2.5,5,15,si,Medellín ↔ Bogotá
+O2,A7,490,2.6,5,15,no,Pto. Salgar → Bucaramanga
+O2,A5,310,2.2,5,15,no,Pto. Salgar → Medellín
+O3,A7,320,2.3,5,15,no,Chocontá → Bucaramanga
+O3,A8,200,2.0,5,15,no,Chocontá → Paratebueno
+O3,A6,65,1.2,5,15,no,Chocontá → Bogotá
+O3,A9,400,2.5,5,15,no,Chocontá → Yopal
+A6,A8,140,1.8,5,15,si,Bogotá ↔ Paratebueno
+A6,A10,111,1.6,5,15,si,Bogotá ↔ Villavicencio
+A8,A9,230,2.1,5,15,si,Paratebueno ↔ Yopal
+A8,A10,65,1.3,5,15,si,Paratebueno ↔ Villavicencio
+A9,A10,290,2.3,5,15,si,Yopal ↔ Villavicencio
+O4,A10,192,2.0,5,15,no,Pto. Gaitán → Villavicencio
+O4,A9,171,1.9,5,15,no,Pto. Gaitán → Yopal
+O4,O5,220,2.1,5,15,si,Pto. Gaitán ↔ Pto. Concordia
+O5,O6,150,1.8,5,15,si,Pto. Concordia ↔ Granada
+O6,A10,80,1.5,5,15,no,Granada → Villavicencio
+A6,D1,15,1.0,5,15,no,Bogotá → Supertiendas Olímpica Norte
+A6,D2,20,1.0,5,15,no,Bogotá → Carulla Cedritos
+A6,D3,18,1.0,5,15,no,Bogotá → Éxito Bosa
+A6,D4,12,1.0,5,15,no,Bogotá → Jumbo Calle 80
+A6,D5,22,1.0,5,15,no,Bogotá → Mercadefam Suba
+A5,D6,10,1.0,5,15,no,Medellín → Éxito Poblado
+A5,D7,12,1.0,5,15,no,Medellín → Jumbo Laureles
+A5,D8,15,1.0,5,15,no,Medellín → Carulla El Tesoro
+A7,D9,8,1.0,5,15,no,Bucaramanga → Supertiendas Centro
+A7,D10,12,1.0,5,15,no,Bucaramanga → Éxito Cabecera
+A3,D11,10,1.0,5,15,no,Cali → Jumbo Sur
+A3,D12,14,1.0,5,15,no,Cali → Carulla Norte
+A3,D13,8,1.0,5,15,no,Cali → Éxito Chipichape
+A10,D14,5,1.0,5,15,no,Villavicencio → Supertiendas Centro
+A10,D15,8,1.0,5,15,no,Villavicencio → Éxito
+A10,D16,6,1.0,5,15,no,Villavicencio → Mercados Llano
+A9,D17,5,1.0,5,15,no,Yopal → Supertiendas Centro
+A9,D18,8,1.0,5,15,no,Yopal → Éxito Yopal
+A9,D19,10,1.0,5,15,no,Yopal → Mercado Ganadero
+A8,D20,4,1.0,5,15,no,Paratebueno → Supertiendas
+A8,D21,6,1.0,5,15,no,Paratebueno → Mercado
+A1,D22,5,1.0,5,15,no,Pto. Asís → Supertiendas
+A1,D23,7,1.0,5,15,no,Pto. Asís → Mercado Central
+A2,D24,5,1.0,5,15,no,Neiva → Supertiendas Centro
+A2,D25,8,1.0,5,15,no,Neiva → Éxito Neiva
+O1,D26,3,0.8,5,15,no,Fusagasugá → Mercado Fusagasugá Centro
+O1,D27,5,0.8,5,15,no,Fusagasugá → Supertiendas Fusagasugá
+O2,D28,3,0.8,5,15,no,Pto. Salgar → Mercado Pto. Salgar Central
+O2,D29,5,0.8,5,15,no,Pto. Salgar → Supertiendas Pto. Salgar
+O3,D30,3,0.8,5,15,no,Chocontá → Mercado Chocontá Central
+O3,D31,5,0.8,5,15,no,Chocontá → Supertiendas Chocontá
+O4,D32,3,0.8,5,15,no,Pto. Gaitán → Mercado Pto. Gaitán Central
+O4,D33,5,0.8,5,15,no,Pto. Gaitán → Supertiendas Pto. Gaitán
+O5,D34,3,0.8,5,15,no,Pto. Concordia → Mercado Pto. Concordia Central
+O5,D35,5,0.8,5,15,no,Pto. Concordia → Supertiendas Pto. Concordia
+O6,D36,3,0.8,5,15,no,Granada → Mercado Granada Central
+O6,D37,5,0.8,5,15,no,Granada → Supertiendas Granada
