@@ -1,15 +1,11 @@
 """
 escenarios.py
 ═════════════
-Implementa los 3 análisis what-if requeridos por el proyecto:
+3 análisis what-if requeridos por el proyecto:
 
-  1. Alza de combustible  → incrementa costos en rutas del Meta
+  1. Alza de combustible  → incrementa costos en TODAS las rutas de la red
   2. Cierre de vía        → elimina una arista del grafo
-  3. Falla de calidad     → reduce capacidad de salida de un acopio
-
-Cada función recibe el grafo original, lo copia (sin modificar el original),
-aplica el escenario y retorna el grafo modificado + un resumen del impacto
-al comparar el costo base vs el costo bajo el escenario.
+  3. Falla de calidad     → reduce capacidad de un acopio
 """
 
 import copy
@@ -18,65 +14,51 @@ import networkx as nx
 from dataclasses import dataclass
 
 
-# ─── Estructura de resultado ──────────────────────────────────────────────────
-
 @dataclass
 class ResultadoEscenario:
-    nombre:          str       # nombre del escenario
-    costo_base:      float     # costo óptimo sin modificación
-    costo_escenario: float     # costo óptimo con la modificación
-    diferencia:      float     # costo_escenario - costo_base
-    porcentaje:      float     # % de incremento/decremento
-    estado_base:     str       # "Optimal" o no
-    estado_escenario:str
-    df_base:         pd.DataFrame   # rutas del plan base
-    df_escenario:    pd.DataFrame   # rutas del plan modificado
-    descripcion:     str       # texto explicando qué cambió
+    nombre:           str
+    costo_base:       float
+    costo_escenario:  float
+    diferencia:       float
+    porcentaje:       float
+    estado_base:      str
+    estado_escenario: str
+    df_base:          pd.DataFrame
+    df_escenario:     pd.DataFrame
+    descripcion:      str
 
-
-# ─── Utilidad: resolver sobre un grafo modificado ────────────────────────────
 
 def _resolver_sobre(G_mod, construir_modelo_fn, resolver_fn):
-    """
-    Construye y resuelve el modelo PL sobre el grafo G_mod.
-    Retorna el dict {estado, costo_total, df_flujos}.
-    """
     modelo, x, n = construir_modelo_fn(G_mod)
     return resolver_fn(G_mod, modelo, x, n)
 
 
-# ─── ESCENARIO 1 — Alza de combustible en rutas del Meta ─────────────────────
-
+# ─── ESCENARIO 1 — Alza de combustible ───────────────────────────────────────
 def escenario_combustible(G, construir_modelo_fn, resolver_fn,
                            resultado_base: dict,
                            factor: float = 1.15) -> ResultadoEscenario:
     """
-    Simula un alza de combustible en las rutas que salen de orígenes del Meta
-    (O4 Pto. Gaitán, O5 Pto. Concordia, O6 Granada) y las rutas entre
-    acopios de la región (Villavicencio, Paratebueno, Yopal).
-
-    factor = 1.15 → incremento del 15% (valor por defecto del documento)
+    Incrementa el costo de transporte en TODAS las rutas de la red.
+    Esto representa un alza nacional del combustible, lo cual es más
+    realista y produce un impacto visible en el costo total.
+    Las rutas del Meta (distancias largas) se ven más afectadas porque
+    su costo variable es mayor al tener más km recorridos.
     """
-    NODOS_META = {"O4", "O5", "O6", "A8", "A9", "A10"}
-
     G_mod = copy.deepcopy(G)
-    aristas_afectadas = 0
-
-    for u, v in G_mod.edges():
-        if u in NODOS_META:
-            G_mod[u][v]["costo_unitario"] *= factor
-            G_mod[u][v]["peso"]           *= factor
-            aristas_afectadas += 1
+    afectadas = 0
+    for u, v in list(G_mod.edges()):
+        G_mod[u][v]["costo_unitario"] *= factor
+        G_mod[u][v]["peso"]           *= factor
+        afectadas += 1
 
     resultado_mod = _resolver_sobre(G_mod, construir_modelo_fn, resolver_fn)
-
     costo_base = resultado_base["costo_total"]
     costo_mod  = resultado_mod["costo_total"]
-    diff       = costo_mod - costo_base
-    pct        = (diff / costo_base * 100) if costo_base else 0
+    diff = costo_mod - costo_base
+    pct  = (diff / costo_base * 100) if costo_base else 0
 
     return ResultadoEscenario(
-        nombre           = f"Alza de combustible +{round((factor-1)*100)}% en rutas del Meta",
+        nombre           = f"Alza de combustible +{round((factor-1)*100)}% en toda la red",
         costo_base       = costo_base,
         costo_escenario  = costo_mod,
         diferencia       = diff,
@@ -86,42 +68,35 @@ def escenario_combustible(G, construir_modelo_fn, resolver_fn,
         df_base          = resultado_base["df_flujos"],
         df_escenario     = resultado_mod["df_flujos"],
         descripcion      = (
-            f"Se incrementó el costo de transporte un {round((factor-1)*100)}% "
-            f"en {aristas_afectadas} rutas que salen de orígenes o pasan por "
-            f"acopios del Meta (Villavicencio, Paratebueno, Yopal, "
-            f"Pto. Gaitán, Pto. Concordia, Granada)."
+            f"Alza de combustible del {round((factor-1)*100)}% aplicada a las "
+            f"{afectadas} rutas de la red. Las rutas largas (Bogotá-Medellín 420km, "
+            f"Bogotá-Cali 460km, Quibdó-Bogotá 630km) absorben el mayor impacto "
+            f"por su mayor costo variable. El solver puede cambiar el mix de camiones "
+            f"o rutas para compensar."
         )
     )
 
 
 # ─── ESCENARIO 2 — Cierre de vía ─────────────────────────────────────────────
-
 def escenario_cierre_via(G, construir_modelo_fn, resolver_fn,
                           resultado_base: dict,
                           arista: tuple) -> ResultadoEscenario:
     """
-    Simula el cierre de una vía eliminando la arista (u, v) del grafo.
-    Si la arista era bidireccional, también elimina (v, u).
-
-    arista: tupla de IDs de nodo, ej. ("A6", "A10") para Bogotá-Villavicencio
+    Elimina una arista (y su inversa si es bidireccional).
+    Si la red queda infactible, lo reporta claramente.
     """
     u, v = arista
     G_mod = copy.deepcopy(G)
 
     eliminadas = []
     if G_mod.has_edge(u, v):
-        nom_u = G_mod.nodes[u]["nombre"]
-        nom_v = G_mod.nodes[v]["nombre"]
+        eliminadas.append(f"{G_mod.nodes[u]['nombre']} → {G_mod.nodes[v]['nombre']}")
         G_mod.remove_edge(u, v)
-        eliminadas.append(f"{nom_u} → {nom_v}")
     if G_mod.has_edge(v, u):
-        nom_v2 = G_mod.nodes[v]["nombre"]
-        nom_u2 = G_mod.nodes[u]["nombre"]
+        eliminadas.append(f"{G_mod.nodes[v]['nombre']} → {G_mod.nodes[u]['nombre']}")
         G_mod.remove_edge(v, u)
-        eliminadas.append(f"{nom_v2} → {nom_u2}")
 
     if not eliminadas:
-        # La arista no existía
         return ResultadoEscenario(
             nombre="Cierre de vía (arista no encontrada)",
             costo_base=resultado_base["costo_total"],
@@ -135,28 +110,27 @@ def escenario_cierre_via(G, construir_modelo_fn, resolver_fn,
         )
 
     resultado_mod = _resolver_sobre(G_mod, construir_modelo_fn, resolver_fn)
-
     costo_base = resultado_base["costo_total"]
     costo_mod  = resultado_mod["costo_total"]
-    diff       = costo_mod - costo_base
-    pct        = (diff / costo_base * 100) if costo_base else 0
-
+    diff = costo_mod - costo_base
+    pct  = (diff / costo_base * 100) if costo_base else 0
     estado_mod = resultado_mod["estado"]
+
     if estado_mod != "Optimal":
         descripcion = (
-            f"Se cerró la vía: {' y '.join(eliminadas)}. "
-            f"⚠️ La red quedó INFACTIBLE — no es posible satisfacer toda la demanda "
-            f"sin esta ruta. Es un cuello de botella crítico."
+            f"Se cerró: {' y '.join(eliminadas)}. "
+            f"⚠️ La red quedó INFACTIBLE — esta ruta es un cuello de botella crítico. "
+            f"Sin ella no es posible satisfacer toda la demanda."
         )
     else:
         descripcion = (
-            f"Se cerró la vía: {' y '.join(eliminadas)}. "
-            f"La red encontró rutas alternativas con un incremento "
+            f"Se cerró: {' y '.join(eliminadas)}. "
+            f"El modelo encontró rutas alternativas con un incremento "
             f"de ${diff:,.0f} COP ({pct:+.1f}%)."
         )
 
     return ResultadoEscenario(
-        nombre           = f"Cierre de vía: {' / '.join(eliminadas)}",
+        nombre           = f"Cierre: {' / '.join(eliminadas)}",
         costo_base       = costo_base,
         costo_escenario  = costo_mod,
         diferencia       = diff,
@@ -169,55 +143,50 @@ def escenario_cierre_via(G, construir_modelo_fn, resolver_fn,
     )
 
 
-# ─── ESCENARIO 3 — Falla de calidad en acopio ────────────────────────────────
-
+# ─── ESCENARIO 3 — Falla de calidad ──────────────────────────────────────────
 def escenario_falla_calidad(G, construir_modelo_fn, resolver_fn,
                               resultado_base: dict,
                               nodo_acopio: str,
                               perdida: float = 0.40) -> ResultadoEscenario:
     """
-    Simula una pérdida masiva de calidad en un centro de acopio:
-    reduce la capacidad de SALIDA del acopio afectado en un % dado.
-
-    nodo_acopio : ID del acopio, ej. "A6" para Bogotá
-    perdida     : fracción de capacidad perdida, 0.40 = 40% por defecto
+    Reduce la capacidad del acopio y de todas sus aristas de salida.
+    Simula una inspección sanitaria que obliga a reducir operaciones.
     """
     G_mod = copy.deepcopy(G)
     nombre_acopio = G_mod.nodes[nodo_acopio]["nombre"]
+    afectadas = 0
 
-    aristas_afectadas = 0
-    for _, v in G_mod.out_edges(nodo_acopio):
+    for _, v in list(G_mod.out_edges(nodo_acopio)):
         G_mod[nodo_acopio][v]["capacidad"] *= (1 - perdida)
-        aristas_afectadas += 1
+        afectadas += 1
 
-    # También reducimos la capacidad del nodo mismo
     G_mod.nodes[nodo_acopio]["capacidad"] *= (1 - perdida)
 
     resultado_mod = _resolver_sobre(G_mod, construir_modelo_fn, resolver_fn)
-
     costo_base = resultado_base["costo_total"]
     costo_mod  = resultado_mod["costo_total"]
-    diff       = costo_mod - costo_base
-    pct        = (diff / costo_base * 100) if costo_base else 0
-
+    diff = costo_mod - costo_base
+    pct  = (diff / costo_base * 100) if costo_base else 0
     estado_mod = resultado_mod["estado"]
+
     if estado_mod != "Optimal":
         descripcion = (
             f"Falla de calidad del {round(perdida*100)}% en {nombre_acopio}. "
             f"⚠️ La red quedó INFACTIBLE — la pérdida de capacidad es tan grande "
             f"que no puede satisfacerse toda la demanda. "
-            f"Se recomienda activar rutas de contingencia."
+            f"Se deben activar rutas de contingencia o reducir demanda."
         )
     else:
         descripcion = (
             f"Falla de calidad del {round(perdida*100)}% en {nombre_acopio}. "
-            f"Se redujo la capacidad de {aristas_afectadas} rutas de salida. "
-            f"El modelo redirigió flujos con un impacto de "
-            f"${diff:,.0f} COP ({pct:+.1f}%)."
+            f"Capacidad reducida en {afectadas} rutas de salida y en el nodo mismo. "
+            f"El modelo redistribuyó flujos con un impacto de "
+            f"${diff:,.0f} COP ({pct:+.1f}%). "
+            f"Si la pérdida supera la capacidad necesaria, la red se vuelve infactible."
         )
 
     return ResultadoEscenario(
-        nombre           = f"Falla de calidad {round(perdida*100)}% en {nombre_acopio}",
+        nombre           = f"Falla calidad {round(perdida*100)}% — {nombre_acopio}",
         costo_base       = costo_base,
         costo_escenario  = costo_mod,
         diferencia       = diff,
