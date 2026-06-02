@@ -896,6 +896,7 @@ elif pagina == "🗄️ Administración de Datos":
         st.success(
             "Nodo y aristas asociadas eliminados"
         )
+    st.subheader("Agregar Arista")
 
     with st.form("nueva_arista"):
 
