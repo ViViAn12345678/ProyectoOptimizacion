@@ -26,7 +26,47 @@ st.set_page_config(
 def get_red():
     return cargar_red()
 
-G = get_red()
+
+def cargar_red_usuario(archivo_nodos, archivo_aristas):
+    return cargar_red(
+        ruta_nodos=archivo_nodos,
+        ruta_aristas=archivo_aristas
+    )
+
+
+archivo_nodos = st.sidebar.file_uploader(
+    "Nodos CSV",
+    type=["csv"]
+)
+
+archivo_aristas = st.sidebar.file_uploader(
+    "Aristas CSV",
+    type=["csv"]
+)
+
+if archivo_nodos is not None and archivo_aristas is not None:
+
+    try:
+        G = cargar_red_usuario(
+            archivo_nodos,
+            archivo_aristas
+        )
+
+        st.sidebar.success(
+            "Red cargada desde archivos del usuario"
+        )
+
+    except Exception as e:
+
+        st.sidebar.error(
+            f"Error al cargar archivos: {e}"
+        )
+
+        G = get_red()
+
+else:
+    G = get_red()
+
 todos_nodos   = {d["nombre"]: n for n, d in G.nodes(data=True)}
 nodos_fuente  = sorted(d["nombre"] for _, d in G.nodes(data=True) if d["tipo"] in ("origen", "acopio"))
 nombres_lista = sorted(todos_nodos.keys())
@@ -49,6 +89,7 @@ pagina = st.sidebar.radio("Navegar", [
     "⚙️ Optimización PL",
     "🔍 Algoritmos de Grafos",
     "🧪 Escenarios What-If",
+    "🗄️ Administración de Datos"
 ])
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -305,6 +346,16 @@ elif pagina == "⚙️ Optimización PL":
             resultado = resolver(G, modelo, x, n_var)
             df_res = resultado["df_flujos"]
 
+            st.metric(
+                "Ingresos",
+                f"${resultado['ingresos']:,.0f}"
+            )
+
+            st.metric(
+                "Ganancia",
+                f"${resultado['ganancia']:,.0f}"
+            )
+
         estado = resultado["estado"]
         costo  = resultado["costo_total"]
 
@@ -474,7 +525,24 @@ elif pagina == "🧪 Escenarios What-If":
     Modifica variables clave de la red y observa cómo cambia el costo óptimo.
     El modelo se resuelve dos veces: **base** y **con el escenario**, y se comparan los resultados.
     """)
- 
+    lista_aristas = [
+        f"{u}->{v}"
+        for u,v in G.edges()
+    ]
+    aristas_seleccionadas = st.multiselect(
+        "Rutas afectadas",
+        lista_aristas
+    )
+    aristas_afectadas = []
+
+    for a in aristas_seleccionadas:
+
+        u,v = a.split("->")
+
+        aristas_afectadas.append(
+            (u,v)
+        )
+        
     # ── Resolver base primero ─────────────────────────────────────────────────
     st.info("⚙️ Primero se resuelve el modelo base para tener un punto de comparación.")
     if st.button("▶ Resolver modelo base", type="primary", key="btn_base_esc"):
@@ -665,3 +733,322 @@ elif pagina == "🧪 Escenarios What-If":
                 c2.metric("Estado", r.estado_escenario)
                 c3.metric("Impacto", "RED INFACTIBLE")
                 st.error(r.descripcion)
+
+elif pagina == "🗄️ Administración de Datos":
+
+    st.title("Administración de Nodos y Aristas")
+
+    nodos_df = pd.read_csv("Data/nodos.csv")
+    aristas_df = pd.read_csv("Data/aristas.csv")
+
+    st.subheader("Nodos actuales")
+    st.dataframe(nodos_df)
+
+    st.subheader("Aristas")
+    st.dataframe(aristas_df)
+
+    st.subheader("Agregar Nodo")
+
+    with st.form("nuevo_nodo"):
+
+        id_nodo = st.text_input("ID")
+        nombre = st.text_input("Nombre")
+
+        tipo = st.selectbox(
+            "Tipo",
+            ["origen", "acopio", "destino"]
+        )
+
+        capacidad = st.number_input(
+            "Capacidad",
+            min_value=0.0
+        )
+
+        demanda = st.number_input(
+            "Demanda",
+            min_value=0.0
+        )
+
+        departamento = st.text_input(
+            "Departamento"
+        )
+
+        enviar = st.form_submit_button(
+            "Guardar"
+        )
+
+        if enviar:
+
+            nuevo = pd.DataFrame([
+                {
+                    "id": id_nodo,
+                    "nombre": nombre,
+                    "tipo": tipo,
+                    "capacidad_ton": capacidad,
+                    "demanda_ton": demanda,
+                    "departamento": departamento
+                }
+            ])
+
+            nodos_df = pd.concat(
+                [nodos_df, nuevo],
+                ignore_index=True
+            )
+
+            nodos_df.to_csv(
+                "Data/nodos.csv",
+                index=False
+            )
+
+            st.success("Nodo guardado")
+
+    st.subheader("Editar Nodo")
+
+    id_editar = st.selectbox(
+        "Seleccione Nodo",
+        nodos_df["id"],
+        key="editar_nodo"
+    )
+
+    fila = nodos_df[
+        nodos_df["id"] == id_editar
+    ].iloc[0]
+
+    nombre_edit = st.text_input(
+        "Nombre",
+        value=fila["nombre"]
+    )
+
+    tipo_edit = st.selectbox(
+        "Tipo",
+        ["origen","acopio","destino"],
+        index=[
+            "origen",
+            "acopio",
+            "destino"
+        ].index(fila["tipo"])
+    )
+
+    capacidad_edit = st.number_input(
+        "Capacidad",
+        value=float(fila["capacidad_ton"])
+    )
+
+    demanda_edit = st.number_input(
+        "Demanda",
+        value=float(fila["demanda_ton"])
+    )
+
+    departamento_edit = st.text_input(
+        "Departamento",
+        value=fila["departamento"]
+    )
+
+    if st.button("Actualizar Nodo"):
+
+        idx = nodos_df[
+            nodos_df["id"] == id_editar
+        ].index[0]
+
+        nodos_df.loc[idx,"nombre"] = nombre_edit
+        nodos_df.loc[idx,"tipo"] = tipo_edit
+        nodos_df.loc[idx,"capacidad_ton"] = capacidad_edit
+        nodos_df.loc[idx,"demanda_ton"] = demanda_edit
+        nodos_df.loc[idx,"departamento"] = departamento_edit
+
+        nodos_df.to_csv(
+            "Data/nodos.csv",
+            index=False
+        )
+
+        st.success("Nodo actualizado")
+
+    st.subheader("Eliminar Nodo")
+
+    id_borrar = st.selectbox(
+        "Nodo a eliminar",
+        nodos_df["id"],
+        key="borrar_nodo"
+    )
+
+    if st.button("Eliminar Nodo"):
+
+        nodos_df = nodos_df[
+            nodos_df["id"] != id_borrar
+        ]
+
+        aristas_df = aristas_df[
+            (aristas_df["origen"] != id_borrar)
+            &
+            (aristas_df["destino"] != id_borrar)
+        ]
+
+        nodos_df.to_csv(
+            "Data/nodos.csv",
+            index=False
+        )
+
+        aristas_df.to_csv(
+            "Data/aristas.csv",
+            index=False
+        )
+
+        st.success(
+            "Nodo y aristas asociadas eliminados"
+        )
+
+    with st.form("nueva_arista"):
+
+        origen = st.selectbox(
+            "Origen",
+            nodos_df["id"]
+        )
+
+        destino = st.selectbox(
+            "Destino",
+            nodos_df["id"]
+        )
+
+        distancia = st.number_input(
+            "Distancia km",
+            min_value=0.0
+        )
+
+        costo = st.number_input(
+            "Costo ton/km",
+            min_value=0.0
+        )
+
+        guardar = st.form_submit_button(
+            "Guardar Arista"
+        )
+
+        if guardar:
+
+            nueva = pd.DataFrame([
+                {
+                    "origen": origen,
+                    "destino": destino,
+                    "distancia_km": distancia,
+                    "costo_ton_km": costo,
+                    "capacidad_pequeño_ton": 5,
+                    "capacidad_grande_ton": 15,
+                    "bidireccional": "no"
+                }
+            ])
+
+            aristas_df = pd.concat(
+                [aristas_df, nueva],
+                ignore_index=True
+            )
+
+            aristas_df.to_csv(
+                "Data/aristas.csv",
+                index=False
+            )
+
+            st.success("Arista agregada")
+
+    st.subheader("Editar Arista")
+
+    aristas_df["ruta"] = (
+        aristas_df["origen"]
+        + " → "
+        + aristas_df["destino"]
+    )
+
+    ruta = st.selectbox(
+        "Seleccione Ruta",
+        aristas_df["ruta"]
+    )
+
+    fila = aristas_df[
+        aristas_df["ruta"] == ruta
+    ].iloc[0]
+
+    distancia_edit = st.number_input(
+        "Distancia",
+        value=float(fila["distancia_km"]),
+        key="dist_edit"
+    )
+
+    costo_edit = st.number_input(
+        "Costo",
+        value=float(fila["costo_ton_km"]),
+        key="cost_edit"
+    )
+
+    cap_peq_edit = st.number_input(
+        "Capacidad Camión Pequeño",
+        value=float(
+            fila["capacidad_pequeño_ton"]
+        )
+    )
+
+    cap_grande_edit = st.number_input(
+        "Capacidad Camión Grande",
+        value=float(
+            fila["capacidad_grande_ton"]
+        )
+    )
+
+    if st.button("Actualizar Arista"):
+
+        idx = fila.name
+
+        aristas_df.loc[
+            idx,
+            "distancia_km"
+        ] = distancia_edit
+
+        aristas_df.loc[
+            idx,
+            "costo_ton_km"
+        ] = costo_edit
+
+        aristas_df.loc[
+            idx,
+            "capacidad_pequeño_ton"
+        ] = cap_peq_edit
+
+        aristas_df.loc[
+            idx,
+            "capacidad_grande_ton"
+        ] = cap_grande_edit
+
+        aristas_df.to_csv(
+            "Data/aristas.csv",
+            index=False
+        )
+
+        st.success(
+            "Arista actualizada"
+        )
+    st.subheader("Eliminar Arista")
+
+    ruta_borrar = st.selectbox(
+        "Ruta",
+        aristas_df["ruta"],
+        key="borrar_arista"
+    )
+
+    if st.button("Eliminar Arista"):
+
+        aristas_df = aristas_df[
+            aristas_df["ruta"] != ruta_borrar
+        ]
+
+        aristas_df.drop(
+            columns=["ruta"],
+            errors="ignore",
+            inplace=True
+        )
+
+        aristas_df.to_csv(
+            "Data/aristas.csv",
+            index=False
+        )
+
+        st.success(
+            "Arista eliminada"
+        )

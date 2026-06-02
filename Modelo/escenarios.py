@@ -34,9 +34,13 @@ def _resolver_sobre(G_mod, construir_modelo_fn, resolver_fn):
 
 
 # ─── ESCENARIO 1 — Alza de combustible ───────────────────────────────────────
-def escenario_combustible(G, construir_modelo_fn, resolver_fn,
-                           resultado_base: dict,
-                           factor: float = 1.15) -> ResultadoEscenario:
+def escenario_combustible(
+        G, 
+        construir_modelo_fn, 
+        resolver_fn,
+        resultado_base,
+        aristas_afectadas,
+        factor: float = 1.15) -> ResultadoEscenario:
     """
     Incrementa el costo de transporte en TODAS las rutas de la red.
     Esto representa un alza nacional del combustible, lo cual es más
@@ -46,10 +50,10 @@ def escenario_combustible(G, construir_modelo_fn, resolver_fn,
     """
     G_mod = copy.deepcopy(G)
     afectadas = 0
-    for u, v in list(G_mod.edges()):
-        G_mod[u][v]["costo_unitario"] *= factor
-        G_mod[u][v]["peso"]           *= factor
-        afectadas += 1
+    for u,v in aristas_afectadas:
+        if G_mod.has_edge(u,v):
+            G_mod[u][v]["costo_unitario"] *= factor
+            G_mod[u][v]["peso"] *= factor
 
     resultado_mod = _resolver_sobre(G_mod, construir_modelo_fn, resolver_fn)
     costo_base = resultado_base["costo_total"]
@@ -153,7 +157,12 @@ def escenario_falla_calidad(G, construir_modelo_fn, resolver_fn,
     Simula una inspección sanitaria que obliga a reducir operaciones.
     """
     G_mod = copy.deepcopy(G)
+
+    if perdida >= 0.8:
+        G_mod.nodes[nodo_acopio]["calidad"] = 0
+    
     nombre_acopio = G_mod.nodes[nodo_acopio]["nombre"]
+    
     afectadas = 0
 
     for _, v in list(G_mod.out_edges(nodo_acopio)):

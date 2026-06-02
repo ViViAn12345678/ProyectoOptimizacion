@@ -65,20 +65,70 @@ def construir_modelo(G):
     n = pulp.LpVariable.dicts("viajes",
         [(i, j, k) for (i,j) in aristas for k in tipos],
         lowBound=0, cat="Integer")
+    
+    calidad = {}
+
+    for nodo, datos in G.nodes(data=True):
+        calidad[nodo] = datos.get("calidad", 1)
+
+    PENALIZACION_CALIDAD = 500000
+
+    falla_calidad = pulp.LpVariable.dicts(
+        "falla_calidad",
+        G.nodes(),
+        cat="Binary"
+    )
+    
+    for nodo in G.nodes():
+
+        if calidad[nodo] == 0:
+
+            modelo += (
+                falla_calidad[nodo] == 1,
+                f"FallaCalidad_{nodo}"
+            )
+
+        else:
+
+            modelo += (
+                falla_calidad[nodo] == 0,
+                f"SinFallaCalidad_{nodo}"
+            )
 
     # Función objetivo
     modelo += (
-        pulp.lpSum(G[i][j]["peso"] * x[(i,j,k)]
-                   for (i,j) in aristas for k in tipos)
-        + pulp.lpSum(CAMIONES[k]["costo_fijo"] * n[(i,j,k)]
-                     for (i,j) in aristas for k in tipos)
-    ), "Costo_Total"
+
+        pulp.lpSum(
+            G[i][j]["peso"] * x[(i,j,k)]
+            for (i,j) in aristas
+            for k in tipos
+        )
+        +pulp.lpSum(
+            CAMIONES[k]["costo_fijo"] * n[(i,j,k)]
+            for (i,j) in aristas
+            for k in tipos
+        )
+        +pulp.lpSum(
+            PENALIZACION_CALIDAD *
+            falla_calidad[nodo]
+            for nodo in G.nodes()
+        )
+    )
 
     # Restricciones
     for nodo, datos in G.nodes(data=True):
         salida  = pulp.lpSum(x[(nodo,j,k)] for j in G.successors(nodo)   for k in tipos)
         entrada = pulp.lpSum(x[(i,nodo,k)] for i in G.predecessors(nodo) for k in tipos)
+        
+        if calidad[nodo] == 0:
 
+            for j in G.successors(nodo):
+                for k in tipos:
+
+                    modelo += (
+                        x[(nodo,j,k)] == 0,
+                        f"Calidad_{nodo}_{j}_{k}"
+                    )
         if datos["tipo"] == "origen":
             modelo += salida <= datos["capacidad"],          f"R1_oferta_{nodo}"
         elif datos["tipo"] == "acopio":
@@ -117,9 +167,24 @@ def resolver(G, modelo, x, n):
                 "viajes":       int(viajes),
                 "costo_ruta_COP": round(peso * flujo + CAMIONES[k]["costo_fijo"] * viajes, 0),
             })
+    ingresos = 0
+
+    for nodo, datos in G.nodes(data=True):
+
+        if datos["tipo"] == "destino":
+
+            precio = datos.get("precio_venta",15000)
+
+            ingresos += (
+                datos["demanda"] * precio
+            )
+    ganancia = ingresos - costo_total
 
     return {
         "estado":      estado,
         "costo_total": costo_total,
+        "ingresos": ingresos,
+        "ganancia": ganancia,
         "df_flujos":   pd.DataFrame(filas),
+        
     }

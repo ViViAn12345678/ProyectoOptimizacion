@@ -12,6 +12,39 @@ def cargar_red(ruta_nodos=None, ruta_aristas=None) -> nx.DiGraph:
     aristas_df = pd.read_csv(ruta_aristas)
 
     G = nx.DiGraph()
+    columnas_nodos = [
+        "id",
+        "nombre",
+        "tipo",
+        "capacidad_ton",
+        "demanda_ton",
+        "departamento"
+    ]
+
+    for col in columnas_nodos:
+
+        if col not in nodos_df.columns:
+
+            raise ValueError(
+                f"Falta columna {col} en nodos.csv"
+            )
+        
+    columnas_aristas = [
+        "origen",
+        "destino",
+        "distancia_km",
+        "costo_ton_km",
+        "capacidad_pequeño_ton",
+        "capacidad_grande_ton"
+    ]
+
+    for col in columnas_aristas:
+
+        if col not in aristas_df.columns:
+
+            raise ValueError(
+                f"Falta columna {col} en aristas.csv"
+            )
 
     for _, r in nodos_df.iterrows():
         G.add_node(r["id"],
