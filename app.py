@@ -289,6 +289,117 @@ elif pagina == "📐 Función Objetivo":
             {"Parámetro": "Distancias", "Valor": "65 – 630 km"},
         ]), hide_index=True)
 
+    st.divider()
+    st.subheader("Cálculo de la Matriz de Costos")
+
+    st.markdown("""
+    Antes de aplicar el método de transporte, el programa calcula el costo mínimo
+    de transportar una tonelada desde cada origen hasta cada destino.
+    """)
+
+    st.latex(r"""
+    c_{ij} = \sum_{(u,v)\in Ruta_{ij}}
+    (distancia_{uv}\times costo_{uv})
+    """)
+
+    st.info("""
+    Para cada combinación origen-destino se ejecuta el algoritmo de Dijkstra,
+    obteniendo la ruta de menor costo dentro de la red logística.
+    """)
+
+    st.subheader("Matriz de Transporte")
+
+    st.latex(r"""
+    C =
+    \begin{bmatrix}
+    c_{11} & c_{12} & \cdots & c_{1n}\\
+    c_{21} & c_{22} & \cdots & c_{2n}\\
+    \vdots & \vdots & \ddots & \vdots\\
+    c_{m1} & c_{m2} & \cdots & c_{mn}
+    \end{bmatrix}
+    """)
+
+    st.markdown("""
+    Cada elemento de la matriz representa el costo de transportar una unidad
+    desde un origen hasta un destino.
+    """)
+
+    st.divider()
+    st.subheader("Generación de la Solución Inicial")
+
+    with st.expander("Método Esquina Noroeste"):
+
+        st.markdown("""
+        Comienza en la esquina superior izquierda de la matriz y asigna la mayor
+        cantidad posible sin violar restricciones de oferta o demanda.
+        """)
+
+        st.latex(r"""
+        x_{ij}= \min(Oferta_i,Demanda_j)
+        """)
+
+    with st.expander("Método de Costo Mínimo"):
+
+        st.markdown("""
+        Selecciona primero la celda con menor costo unitario y asigna la mayor
+        cantidad posible.
+        """)
+
+        st.latex(r"""
+        \min(c_{ij})
+        """)
+
+    with st.expander("Método de Aproximación de Vogel"):
+
+        st.markdown("""
+        Calcula penalizaciones entre los dos costos más bajos de cada fila y
+        columna para decidir dónde asignar primero.
+        """)
+
+        st.latex(r"""
+        Penalización =
+        c_{segundo\ menor}
+        -
+        c_{menor}
+        """)
+
+    st.divider()
+    st.subheader("Optimización MODI")
+    st.markdown("""
+    Una vez obtenida la solución inicial, se aplica el método MODI
+    (Modified Distribution Method) para verificar si existe una
+    solución de menor costo.
+    """)
+
+    st.latex(r"""
+    u_i + v_j = c_{ij}
+    """)
+    st.markdown("""
+    Los potenciales \(u_i\) y \(v_j\) se calculan usando las celdas básicas
+    de la solución actual.
+    """)
+
+    st.latex(r"""
+    \Delta_{ij}\ge 0
+    \qquad
+    \forall(i,j)
+    """)
+
+    st.divider()
+    st.subheader("Costo Total Optimizado")
+
+    st.latex(r"""
+    Z =
+    \sum_{i=1}^{m}
+    \sum_{j=1}^{n}
+    c_{ij}x_{ij}
+    """)
+
+    st.markdown("""
+    El costo total corresponde a la suma del costo unitario de transporte
+    multiplicado por la cantidad enviada en cada asignación.
+    """)
+
 # ══════════════════════════════════════════════════════════════════════════════
 # PÁGINA 3 — GRAFO DE LA RED
 # ══════════════════════════════════════════════════════════════════════════════
