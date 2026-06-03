@@ -7,12 +7,20 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import networkx as nx
+import pulp
+import os
 
 from Modelo.data_loader import cargar_red
 from Modelo.modelo_pl    import construir_modelo, resolver, CAMIONES, MERMA
 from Modelo.algoritmos  import (dijkstra, flujo_maximo,cuellos_de_botella, tabla_rutas_optimas)
 from Modelo.escenarios import (escenario_combustible,escenario_cierre_via,escenario_falla_calidad)
-import pulp
+from Modelo.Transporte.esquina_noroeste import esquina_noroeste
+from Modelo.Transporte.costo_minimo import costo_minimo
+from Modelo.Transporte.vogel import vogel
+from Modelo.Transporte.seleccion_inicial import mejor_solucion
+from Modelo.Transporte.modi import optimizar_modi
+from Modelo.Transporte.matriz_costos import construir_matriz_costos
+from Modelo.Transporte.equivalencias import equivalencias
 
 # ─── Configuración ────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -89,7 +97,8 @@ pagina = st.sidebar.radio("Navegar", [
     "⚙️ Optimización PL",
     "🔍 Algoritmos de Grafos",
     "🧪 Escenarios What-If",
-    "🗄️ Administración de Datos"
+    "🗄️ Administración de Datos",
+    "🚚 Método de Transporte"
 ])
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -518,7 +527,9 @@ elif pagina == "🔍 Algoritmos de Grafos":
                     st.info("No se encontraron cuellos de botella entre estos nodos.")
             except Exception as e:
                 st.error(f"Error: {e}")
-
+# ══════════════════════════════════════════════════════════════════════════════
+# PÁGINA 6 — ESCENARIOS WHAT-IF
+# ══════════════════════════════════════════════════════════════════════════════
 elif pagina == "🧪 Escenarios What-If":
     st.title("🧪 Análisis de Escenarios — What-If")
     st.markdown("""
@@ -586,7 +597,7 @@ elif pagina == "🧪 Escenarios What-If":
             with st.spinner("Resolviendo escenario..."):
                 from Modelo.escenarios import escenario_combustible
                 r = escenario_combustible(G, construir_modelo, resolver,
-                                          resultado_base, factor)
+                                          resultado_base, aristas_afectadas ,factor)
  
             c1, c2, c3 = st.columns(3)
             c1.metric("Costo base",       f"${r.costo_base:,.0f} COP")
@@ -733,7 +744,9 @@ elif pagina == "🧪 Escenarios What-If":
                 c2.metric("Estado", r.estado_escenario)
                 c3.metric("Impacto", "RED INFACTIBLE")
                 st.error(r.descripcion)
-
+# ══════════════════════════════════════════════════════════════════════════════
+# PÁGINA 7 — ADMINISTRACIÓN DE DATOS
+# ══════════════════════════════════════════════════════════════════════════════
 elif pagina == "🗄️ Administración de Datos":
 
     st.title("Administración de Nodos y Aristas")
@@ -1052,4 +1065,297 @@ elif pagina == "🗄️ Administración de Datos":
 
         st.success(
             "Arista eliminada"
+        )
+# ══════════════════════════════════════════════════════════════════════════════
+# PÁGINA 5 — ALGORITMOS DE GRAFOS
+# ══════════════════════════════════════════════════════════════════════════════
+elif pagina == "🚚 Método de Transporte":
+
+    st.title("Método de Transporte")
+
+    nodos_df = pd.read_csv("Data/nodos.csv")
+
+    archivo_od = "Data/oferta_demanda.csv"
+
+    if os.path.exists(archivo_od):
+
+        od_df = pd.read_csv(archivo_od)
+
+    else:
+
+        od_df = nodos_df[
+            ["id","nombre","tipo"]
+        ].copy()
+
+        od_df["oferta_ton"] = 0.0
+        od_df["demanda_ton"] = 0.0
+
+    # Actualizar nombre y tipo según nodos.csv
+    for _, nodo in nodos_df.iterrows():
+
+        id_transporte = equivalencias.get(
+            nodo["id"],
+            nodo["id"]
+        )
+
+        if id_transporte in od_df["id_nodo"].values:
+
+            od_df.loc[
+                od_df["id_nodo"] == nodo["id"],
+                "tipo"
+            ] = nodo["tipo"]
+
+            od_df.loc[
+                od_df["id_nodo"] == nodo["id"],
+                "nombre"
+            ] = nodo["nombre"]
+        else:
+
+            nueva_fila = pd.DataFrame([{
+                "id": nodo["id"],
+                "nombre": nodo["nombre"],
+                "tipo": nodo["tipo"],
+                "oferta_ton": 0,
+                "demanda_ton": 0
+            }])
+
+            od_df = pd.concat(
+                [od_df, nueva_fila],
+                ignore_index=True
+            )
+
+    # Eliminar registros de nodos borrados
+    od_df = od_df[
+        od_df["id"].isin(
+            nodos_df["id"]
+        )
+    ]
+
+    # Forzar que los acopios nunca tengan oferta ni demanda
+    od_df.loc[
+        od_df["tipo"] == "acopio",
+        "oferta_ton"
+    ] = 0
+
+    od_df.loc[
+        od_df["tipo"] == "acopio",
+        "demanda_ton"
+    ] = 0
+
+    # Guardar cambios
+    od_df.to_csv(
+        archivo_od,
+        index=False
+    )
+
+    st.subheader("Oferta y Demanda Registrada")
+
+    st.dataframe(od_df)
+
+    st.subheader("Configurar Oferta y Demanda")
+
+    id_nodo = st.selectbox(
+        "Seleccione Nodo",
+        od_df["id"]
+    )
+
+    fila = od_df[
+        od_df["id"] == id_nodo
+    ].iloc[0]
+
+    st.write(
+        f"Tipo: {fila['tipo']}"
+    )
+
+    if fila["tipo"] == "origen":
+
+        oferta = st.number_input(
+            "Oferta (Toneladas)",
+            value=float(
+                fila["oferta_ton"]
+            ),
+            min_value=0.0
+        )
+
+        if st.button("Guardar Oferta"):
+
+            idx = fila.name
+
+            od_df.loc[idx, "oferta_ton"] = oferta
+
+            od_df.loc[idx, "demanda_ton"] = 0
+
+            od_df.to_csv(archivo_od, index=False)
+
+            st.success( "Oferta actualizada")
+
+    elif fila["tipo"] == "destino":
+
+        demanda = st.number_input(
+            "Demanda (Toneladas)",
+            value=float(fila["demanda_ton"]),
+            min_value=0.0
+        )
+
+        if st.button("Guardar Demanda"):
+
+            idx = fila.name
+
+            od_df.loc[idx,"demanda_ton"] = demanda
+            od_df.loc[idx,"oferta_ton"] = 0
+
+            od_df.to_csv(
+                archivo_od,
+                index=False
+            )
+
+            st.success("Demanda actualizada")
+    else:
+
+        st.info(
+            "Los nodos de tipo ACOPIO "
+            "no pueden tener oferta "
+            "ni demanda."
+        )
+
+    st.subheader("Validación del Problema")
+
+    total_oferta = od_df[
+        od_df["tipo"] == "origen"
+    ]["oferta_ton"].sum()
+
+    total_demanda = od_df[
+        od_df["tipo"] == "destino"
+    ]["demanda_ton"].sum()
+
+    col1,col2 = st.columns(2)
+
+    with col1:
+
+        st.metric(
+            "Oferta Total",
+            total_oferta
+        )
+
+    with col2:
+
+        st.metric(
+            "Demanda Total",
+            total_demanda
+        )
+    st.subheader("Método Inicial")
+
+    metodo = st.selectbox(
+        "Seleccione método",
+        [
+            "Esquina Noroeste",
+            "Costo Mínimo",
+            "Aproximación de Vogel",
+            "Mejor Automático"
+        ]
+    )
+    if st.button(
+        "Calcular Transporte"
+    ):
+        if total_oferta == total_demanda:
+
+            st.success(
+                "Problema balanceado."
+            )
+
+        elif total_oferta > total_demanda:
+
+            st.warning(
+                "La oferta es mayor que la demanda. "
+                "Se agregará un destino ficticio."
+            )
+
+        else:
+
+            st.warning(
+                "La demanda es mayor que la oferta. "
+                "Se agregará un origen ficticio."
+            )
+        oferta = {
+            fila["id"]: fila["oferta_ton"]
+            for _, fila in od_df.iterrows()
+            if fila["tipo"] == "origen"
+        }
+        demanda = {
+            fila["id"]: fila["demanda_ton"]
+            for _, fila in od_df.iterrows()
+            if fila["tipo"] == "destino"
+        }
+        costos, rutas = construir_matriz_costos(
+            G,
+            oferta.keys(),
+            demanda.keys()
+        )
+        st.info(
+            "Construyendo matriz de costos..."
+        )
+
+        st.info(
+            "Calculando rutas mínimas con Dijkstra..."
+        )
+
+        st.info(
+            "Generando solución inicial..."
+        )
+        if metodo == "Esquina Noroeste":
+
+            solucion_inicial = esquina_noroeste(
+                costos,
+                oferta,
+                demanda
+            )
+
+        elif metodo == "Costo Mínimo":
+
+            solucion_inicial = costo_minimo(
+                costos,
+                oferta,
+                demanda
+            )
+
+        elif metodo == "Aproximación de Vogel":
+
+            solucion_inicial = vogel(
+                costos,
+                oferta,
+                demanda
+            )
+
+        elif metodo == "Mejor Automático":
+
+            solucion_inicial = mejor_solucion(
+                costos,
+                oferta,
+                demanda
+            )
+
+        st.info(
+            "Aplicando MODI..."
+        )
+
+        solucion_optima = optimizar_modi(
+            costos,
+            solucion_inicial
+        )
+
+        resultado_df = pd.DataFrame(
+            solucion_optima["asignaciones"]
+        )
+
+        st.subheader(
+            "Asignaciones Óptimas"
+        )
+
+        st.dataframe(
+            resultado_df
+        )
+        
+        st.metric(
+            "Costo Total Optimizado",
+            f"${solucion_optima['costo_total']:,.0f}"
         )
