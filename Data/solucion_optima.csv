@@ -1,57 +1,58 @@
 origen,destino,camion,toneladas,viajes,costo_ruta_COP
-Fusagasugá,Neiva,grande,41.19,3,554005.0
-Fusagasugá,Cali,grande,42.86,3,595543.0
-Fusagasugá,Mercado Fusagasugá Centro,pequeño,8.0,2,160019.0
-Fusagasugá,Supertiendas Fusagasugá,pequeño,6.0,2,160024.0
-Pto. Salgar,Bucaramanga,pequeño,10.0,2,172740.0
-Pto. Salgar,Bucaramanga,grande,12.45,1,195860.0
-Pto. Salgar,Medellín,grande,42.57,3,569031.0
-Pto. Salgar,Mercado Pto. Salgar Central,pequeño,7.0,2,160017.0
-Pto. Salgar,Supertiendas Pto. Salgar,pequeño,5.0,1,80020.0
-Chocontá,Paratebueno,pequeño,9.99,2,163994.0
-Chocontá,Bogotá,grande,59.01,4,724603.0
-Chocontá,Mercado Chocontá Central,pequeño,6.0,2,160014.0
-Chocontá,Supertiendas Chocontá,pequeño,5.0,1,80020.0
-Pto. Gaitán,Yopal,pequeño,5.0,1,81624.0
-Pto. Gaitán,Yopal,grande,30.0,2,369747.0
-Pto. Gaitán,Mercado Pto. Gaitán Central,pequeño,7.0,2,160017.0
-Pto. Gaitán,Supertiendas Pto. Gaitán,pequeño,5.0,1,80020.0
-Pto. Concordia,Mercado Pto. Concordia Central,pequeño,6.0,2,160014.0
-Pto. Concordia,Supertiendas Pto. Concordia,pequeño,5.0,1,80020.0
-Granada,Villavicencio,grande,60.0,4,727200.0
-Granada,Mercado Granada Central,pequeño,8.0,2,160019.0
-Granada,Supertiendas Granada,pequeño,6.0,2,160024.0
-Pto. Asís,Supertiendas Pto. Asís,pequeño,10.0,2,160050.0
-Pto. Asís,Mercado Central Pto. Asís,pequeño,8.0,2,160056.0
-Neiva,Pto. Asís,pequeño,5.0,1,84375.0
-Neiva,Pto. Asís,grande,13.37,1,191696.0
-Neiva,Supertiendas Neiva Centro,grande,12.0,1,180060.0
-Neiva,Éxito Neiva,pequeño,10.0,2,160080.0
-Cali,Jumbo Cali Sur,pequeño,1.0,1,80010.0
-Cali,Jumbo Cali Sur,grande,15.0,1,180150.0
-Cali,Carulla Cali Norte,grande,12.0,1,180168.0
-Cali,Éxito Chipichape,grande,14.0,1,180112.0
-Medellín,Bogotá,pequeño,3.72,1,83902.0
-Medellín,Éxito Medellín Poblado,grande,14.0,1,180140.0
-Medellín,Jumbo Laureles Medellín,grande,11.0,1,180132.0
-Medellín,Carulla El Tesoro,grande,13.0,1,180195.0
-Bogotá,Supertiendas Olímpica Bogotá Norte,pequeño,3.0,1,80045.0
-Bogotá,Supertiendas Olímpica Bogotá Norte,grande,15.0,1,180225.0
-Bogotá,Carulla Cedritos,grande,12.0,1,180240.0
-Bogotá,Éxito Bosa,grande,15.0,1,180270.0
-Bogotá,Jumbo Calle 80,pequeño,5.0,1,80060.0
-Bogotá,Jumbo Calle 80,grande,15.0,1,180180.0
-Bogotá,Mercadefam Suba,pequeño,10.0,2,160220.0
-Bucaramanga,Supertiendas Bucaramanga Centro,grande,12.0,1,180096.0
-Bucaramanga,Éxito Bucaramanga Cabecera,pequeño,10.0,2,160120.0
-Paratebueno,Supertiendas Paratebueno,pequeño,8.0,2,160032.0
-Paratebueno,Mercado Paratebueno,pequeño,6.0,2,160036.0
-Yopal,Paratebueno,pequeño,4.3,1,82077.0
-Yopal,Supertiendas Yopal Centro,pequeño,10.0,2,160050.0
-Yopal,Éxito Yopal,grande,12.0,1,180096.0
-Yopal,Mercado Ganadero Yopal,pequeño,8.0,2,160080.0
-Villavicencio,Bogotá,grande,13.8,1,182451.0
-Villavicencio,Supertiendas Villavicencio Centro,grande,15.0,1,180075.0
-Villavicencio,Éxito Villavicencio,pequeño,3.0,1,80024.0
-Villavicencio,Éxito Villavicencio,grande,15.0,1,180120.0
-Villavicencio,Mercados Llano Villavicencio,grande,12.0,1,180072.0
+Fusagasugá,Neiva,grande,41.19,3,4741499.0
+Fusagasugá,Bogotá,pequeño,1.95,1,134803.0
+Fusagasugá,Cali,grande,42.86,3,17202857.0
+Fusagasugá,Mercado Fusagasugá Centro,pequeño,8.0,2,165760.0
+Fusagasugá,Supertiendas Fusagasugá,pequeño,6.0,2,167200.0
+Pto. Salgar,Medellín,pequeño,10.0,2,2206000.0
+Pto. Salgar,Medellín,grande,28.78,2,6247469.0
+Pto. Salgar,Mercado Pto. Salgar Central,pequeño,7.0,2,165040.0
+Pto. Salgar,Supertiendas Pto. Salgar,pequeño,5.0,1,86000.0
+Chocontá,Bucaramanga,pequeño,10.0,2,2368000.0
+Chocontá,Bucaramanga,grande,12.45,1,2928735.0
+Chocontá,Bogotá,pequeño,1.55,1,116294.0
+Chocontá,Bogotá,grande,45.0,3,1593000.0
+Chocontá,Mercado Chocontá Central,pequeño,6.0,2,164320.0
+Chocontá,Supertiendas Chocontá,pequeño,5.0,1,86000.0
+Pto. Gaitán,Yopal,pequeño,5.0,1,567350.0
+Pto. Gaitán,Yopal,grande,25.61,2,2856426.0
+Pto. Gaitán,Mercado Pto. Gaitán Central,pequeño,7.0,2,165040.0
+Pto. Gaitán,Supertiendas Pto. Gaitán,pequeño,5.0,1,86000.0
+Pto. Concordia,Mercado Pto. Concordia Central,pequeño,6.0,2,164320.0
+Pto. Concordia,Supertiendas Pto. Concordia,pequeño,5.0,1,86000.0
+Granada,Villavicencio,grande,89.1,6,4287439.0
+Granada,Mercado Granada Central,pequeño,8.0,2,165760.0
+Granada,Supertiendas Granada,pequeño,6.0,2,167200.0
+Pto. Asís,Supertiendas Pto. Asís,pequeño,10.0,2,175000.0
+Pto. Asís,Mercado Central Pto. Asís,pequeño,8.0,2,176800.0
+Neiva,Pto. Asís,pequeño,5.0,1,1392500.0
+Neiva,Pto. Asís,grande,13.37,1,3688929.0
+Neiva,Supertiendas Neiva Centro,grande,12.0,1,198000.0
+Neiva,Éxito Neiva,pequeño,10.0,2,184000.0
+Cali,Jumbo Cali Sur,pequeño,1.0,1,83000.0
+Cali,Jumbo Cali Sur,grande,15.0,1,225000.0
+Cali,Carulla Cali Norte,grande,12.0,1,230400.0
+Cali,Éxito Chipichape,grande,14.0,1,213600.0
+Medellín,Éxito Medellín Poblado,grande,14.0,1,222000.0
+Medellín,Jumbo Laureles Medellín,grande,11.0,1,219600.0
+Medellín,Carulla El Tesoro,grande,13.0,1,238500.0
+Bogotá,Supertiendas Olímpica Bogotá Norte,pequeño,3.0,1,93500.0
+Bogotá,Supertiendas Olímpica Bogotá Norte,grande,15.0,1,247500.0
+Bogotá,Carulla Cedritos,grande,12.0,1,252000.0
+Bogotá,Éxito Bosa,grande,15.0,1,261000.0
+Bogotá,Jumbo Calle 80,pequeño,5.0,1,98000.0
+Bogotá,Jumbo Calle 80,grande,15.0,1,234000.0
+Bogotá,Mercadefam Suba,pequeño,10.0,2,226000.0
+Bucaramanga,Supertiendas Bucaramanga Centro,grande,12.0,1,208800.0
+Bucaramanga,Éxito Bucaramanga Cabecera,pequeño,10.0,2,196000.0
+Paratebueno,Supertiendas Paratebueno,pequeño,8.0,2,169600.0
+Paratebueno,Mercado Paratebueno,pequeño,6.0,2,170800.0
+Yopal,Supertiendas Yopal Centro,pequeño,10.0,2,175000.0
+Yopal,Éxito Yopal,grande,12.0,1,208800.0
+Yopal,Mercado Ganadero Yopal,pequeño,8.0,2,184000.0
+Villavicencio,Bogotá,grande,28.03,2,1853327.0
+Villavicencio,Paratebueno,grande,14.29,1,542143.0
+Villavicencio,Supertiendas Villavicencio Centro,grande,15.0,1,202500.0
+Villavicencio,Éxito Villavicencio,pequeño,3.0,1,87200.0
+Villavicencio,Éxito Villavicencio,grande,15.0,1,216000.0
+Villavicencio,Mercados Llano Villavicencio,grande,12.0,1,201600.0

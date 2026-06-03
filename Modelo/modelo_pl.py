@@ -167,23 +167,24 @@ def resolver(G, modelo, x, n):
                 "viajes":       int(viajes),
                 "costo_ruta_COP": round(peso * flujo + CAMIONES[k]["costo_fijo"] * viajes, 0),
             })
-    ingresos = 0
-
+ # --- SEGMENTO FINANCIERO ---
+    COSTO_PRODUCCION_TON = 9000000
+    ingresos         = 0
+    costo_produccion = 0
     for nodo, datos in G.nodes(data=True):
+        if datos.get("tipo") == "destino":
+            demanda     = datos.get("demanda", 0)
+            precio      = datos.get("precio_venta", 1200000000)
+            ingresos         += demanda * precio
+            costo_produccion += demanda * COSTO_PRODUCCION_TON
 
-        if datos["tipo"] == "destino":
-
-            precio = datos.get("precio_venta",15000)
-
-            ingresos += (
-                datos["demanda"] * precio
-            )
-    ganancia = ingresos - costo_total
+    ganancia = ingresos - costo_total - costo_produccion
 
     return {
         "estado":      estado,
         "costo_total": costo_total,
         "ingresos": ingresos,
+        "costo_produccion":  costo_produccion,
         "ganancia": ganancia,
         "df_flujos":   pd.DataFrame(filas),
         
