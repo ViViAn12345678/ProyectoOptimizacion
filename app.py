@@ -1073,6 +1073,9 @@ elif pagina == "🚚 Método de Transporte":
 
     st.title("Método de Transporte")
 
+    if "pedidos" not in st.session_state:
+        st.session_state.pedidos = {}
+
     nodos_df = pd.read_csv("Data/nodos.csv")
 
     archivo_od = "Data/oferta_demanda.csv"
@@ -1101,22 +1104,22 @@ elif pagina == "🚚 Método de Transporte":
         if id_transporte in od_df["id_nodo"].values:
 
             od_df.loc[
-                od_df["id_nodo"] == nodo["id"],
+                od_df["id_nodo"] == id_transporte,
                 "tipo"
             ] = nodo["tipo"]
 
             od_df.loc[
-                od_df["id_nodo"] == nodo["id"],
+                od_df["id_nodo"] == id_transporte,
                 "nombre"
             ] = nodo["nombre"]
         else:
 
             nueva_fila = pd.DataFrame([{
-                "id": nodo["id"],
+                "id_nodo": id_transporte,
                 "nombre": nodo["nombre"],
                 "tipo": nodo["tipo"],
-                "oferta_ton": 0,
-                "demanda_ton": 0
+                "oferta": 0,
+                "demanda": 0
             }])
 
             od_df = pd.concat(
@@ -1125,10 +1128,13 @@ elif pagina == "🚚 Método de Transporte":
             )
 
     # Eliminar registros de nodos borrados
+    ids_validos = [
+        equivalencias.get(i, i)
+        for i in nodos_df["id"]
+    ]
+
     od_df = od_df[
-        od_df["id"].isin(
-            nodos_df["id"]
-        )
+        od_df["id_nodo"].isin(ids_validos)
     ]
 
     # Forzar que los acopios nunca tengan oferta ni demanda
@@ -1150,83 +1156,91 @@ elif pagina == "🚚 Método de Transporte":
 
     st.subheader("Oferta y Demanda Registrada")
 
-    st.dataframe(od_df)
+    st.dataframe(
+        od_df[
+            ["id_nodo","nombre","tipo","oferta","demanda"]
+        ]
+    )
 
     st.subheader("Configurar Oferta y Demanda")
 
     id_nodo = st.selectbox(
         "Seleccione Nodo",
-        od_df["id"]
+        od_df["id_nodo"]
     )
 
-    fila = od_df[
-        od_df["id"] == id_nodo
-    ].iloc[0]
+    filtro = od_df[
+        od_df["id_nodo"] == id_nodo
+    ]
+
+    if filtro.empty:
+
+        st.error(
+            f"No se encontró el nodo {id_nodo}"
+        )
+
+        st.stop()
+
+    fila = filtro.iloc[0]
 
     st.write(
         f"Tipo: {fila['tipo']}"
     )
 
-    if fila["tipo"] == "origen":
+    if fila["tipo"] == "destino":
 
-        oferta = st.number_input(
-            "Oferta (Toneladas)",
-            value=float(
-                fila["oferta_ton"]
-            ),
-            min_value=0.0
+        cantidad = st.number_input(
+            "Cantidad solicitada",
+            min_value=0.0,
+            value=0.0
         )
 
-        if st.button("Guardar Oferta"):
+        if st.button("Agregar Pedido"):
 
-            idx = fila.name
+            st.session_state.pedidos[
+                fila["id_nodo"]
+            ] = cantidad
 
-            od_df.loc[idx, "oferta_ton"] = oferta
-
-            od_df.loc[idx, "demanda_ton"] = 0
-
-            od_df.to_csv(archivo_od, index=False)
-
-            st.success( "Oferta actualizada")
-
-    elif fila["tipo"] == "destino":
-
-        demanda = st.number_input(
-            "Demanda (Toneladas)",
-            value=float(fila["demanda_ton"]),
-            min_value=0.0
-        )
-
-        if st.button("Guardar Demanda"):
-
-            idx = fila.name
-
-            od_df.loc[idx,"demanda_ton"] = demanda
-            od_df.loc[idx,"oferta_ton"] = 0
-
-            od_df.to_csv(
-                archivo_od,
-                index=False
+            st.success(
+                f"Pedido agregado para {fila['nombre']}"
             )
 
-            st.success("Demanda actualizada")
+    elif fila["tipo"] == "origen":
+
+        st.info(
+            f"Oferta disponible: {fila['oferta']}"
+        )
+
     else:
 
         st.info(
-            "Los nodos de tipo ACOPIO "
-            "no pueden tener oferta "
-            "ni demanda."
+            "Los centros de acopio no reciben pedidos."
         )
+
+    st.subheader("Pedidos Registrados")
+
+    if st.session_state.pedidos:
+
+        pedidos_df = pd.DataFrame([
+            {
+                "Destino": destino,
+                "Cantidad": cantidad
+            }
+            for destino, cantidad
+            in st.session_state.pedidos.items()
+        ])
+
+        st.dataframe(pedidos_df)
 
     st.subheader("Validación del Problema")
 
     total_oferta = od_df[
         od_df["tipo"] == "origen"
-    ]["oferta_ton"].sum()
+    ]["oferta"].sum()
 
     total_demanda = od_df[
         od_df["tipo"] == "destino"
-    ]["demanda_ton"].sum()
+    ]["demanda"].sum()
 
     col1,col2 = st.columns(2)
 
@@ -1254,6 +1268,7 @@ elif pagina == "🚚 Método de Transporte":
             "Mejor Automático"
         ]
     )
+
     if st.button(
         "Calcular Transporte"
     ):
@@ -1277,19 +1292,20 @@ elif pagina == "🚚 Método de Transporte":
                 "Se agregará un origen ficticio."
             )
         oferta = {
-            fila["id"]: fila["oferta_ton"]
+            fila["id_nodo"]: fila["oferta"]
             for _, fila in od_df.iterrows()
             if fila["tipo"] == "origen"
         }
-        demanda = {
-            fila["id"]: fila["demanda_ton"]
-            for _, fila in od_df.iterrows()
-            if fila["tipo"] == "destino"
-        }
+
+        demanda = {}
+        for destino, cantidad in st.session_state.pedidos.items():
+            if cantidad > 0:
+                demanda[destino] = cantidad
+
         costos, rutas = construir_matriz_costos(
             G,
             oferta.keys(),
-            demanda.keys()
+            demanda.keys(),
         )
         st.info(
             "Construyendo matriz de costos..."
@@ -1356,6 +1372,6 @@ elif pagina == "🚚 Método de Transporte":
         )
         
         st.metric(
-            "Costo Total Optimizado",
-            f"${solucion_optima['costo_total']:,.0f}"
+            "Costo Total",
+            f"${solucion_optima['costo']:,.0f}"
         )

@@ -1,32 +1,54 @@
-id_nodo,nombre,tipo,oferta,demanda,id,oferta_ton,demanda_ton
-,Jumbo Laureles Medellín,destino,,,D7,0.0,0.0
-,Carulla El Tesoro,destino,,,D8,0.0,0.0
-,Supertiendas Bucaramanga Centro,destino,,,D9,0.0,0.0
-,Éxito Bucaramanga Cabecera,destino,,,D10,0.0,0.0
-,Jumbo Cali Sur,destino,,,D11,0.0,0.0
-,Carulla Cali Norte,destino,,,D12,0.0,0.0
-,Éxito Chipichape,destino,,,D13,0.0,0.0
-,Supertiendas Villavicencio Centro,destino,,,D14,0.0,0.0
-,Éxito Villavicencio,destino,,,D15,0.0,0.0
-,Mercados Llano Villavicencio,destino,,,D16,0.0,0.0
-,Supertiendas Yopal Centro,destino,,,D17,0.0,0.0
-,Éxito Yopal,destino,,,D18,0.0,0.0
-,Mercado Ganadero Yopal,destino,,,D19,0.0,0.0
-,Supertiendas Paratebueno,destino,,,D20,0.0,0.0
-,Mercado Paratebueno,destino,,,D21,0.0,0.0
-,Supertiendas Pto. Asís,destino,,,D22,0.0,0.0
-,Mercado Central Pto. Asís,destino,,,D23,0.0,0.0
-,Supertiendas Neiva Centro,destino,,,D24,0.0,0.0
-,Éxito Neiva,destino,,,D25,0.0,0.0
-,Mercado Fusagasugá Centro,destino,,,D26,0.0,0.0
-,Supertiendas Fusagasugá,destino,,,D27,0.0,0.0
-,Mercado Pto. Salgar Central,destino,,,D28,0.0,0.0
-,Supertiendas Pto. Salgar,destino,,,D29,0.0,0.0
-,Mercado Chocontá Central,destino,,,D30,0.0,0.0
-,Supertiendas Chocontá,destino,,,D31,0.0,0.0
-,Mercado Pto. Gaitán Central,destino,,,D32,0.0,0.0
-,Supertiendas Pto. Gaitán,destino,,,D33,0.0,0.0
-,Mercado Pto. Concordia Central,destino,,,D34,0.0,0.0
-,Supertiendas Pto. Concordia,destino,,,D35,0.0,0.0
-,Mercado Granada Central,destino,,,D36,0.0,0.0
-,Supertiendas Granada,destino,,,D37,0.0,0.0
+id_nodo,nombre,tipo,oferta,demanda,oferta_ton,demanda_ton
+P1,Fusagasugá,origen,5000,0,,
+P2,Pto. Salgar,origen,3000,0,,
+P3,Chocontá,origen,4000,0,,
+P4,Pto. Gaitán,origen,3500,0,,
+P5,Pto. Concordia,origen,4500,0,,
+P6,Granada,origen,2500,0,,
+A1,Pto. Asís,acopio,0,0,0.0,0.0
+A2,Neiva,acopio,0,0,0.0,0.0
+A3,Cali,acopio,0,0,0.0,0.0
+A4,Quibdó,acopio,0,0,0.0,0.0
+A5,Medellín,acopio,0,0,0.0,0.0
+A6,Bogotá,acopio,0,0,0.0,0.0
+A7,Bucaramanga,acopio,0,0,0.0,0.0
+A8,Paratebueno,acopio,0,0,0.0,0.0
+A9,Yopal,acopio,0,0,0.0,0.0
+A10,Villavicencio,acopio,0,0,0.0,0.0
+S1,Supertiendas Olímpica Bogotá Norte,destino,0,1000,,
+S2,Carulla Cedritos,destino,0,800,,
+S3,Éxito Bosa,destino,0,900,,
+S4,Jumbo Calle 80,destino,0,850,,
+S5,Mercadefam Suba,destino,0,500,,
+S6,Éxito Medellín Poblado,destino,0,700,,
+S7,Jumbo Laureles Medellín,destino,0,750,,
+S8,Carulla El Tesoro,destino,0,850,,
+S9,Supertiendas Bucaramanga Centro,destino,0,950,,
+S10,Éxito Bucaramanga Cabecera,destino,0,400,,
+S11,Jumbo Cali Sur,destino,0,450,,
+S12,Carulla Cali Norte,destino,0,600,,
+S13,Éxito Chipichape,destino,0,650,,
+S14,Supertiendas Villavicencio Centro,destino,0,550,,
+S15,Éxito Villavicencio,destino,0,950,,
+S16,Mercados Llano Villavicencio,destino,0,1050,,
+S17,Supertiendas Yopal Centro,destino,0,780,,
+S18,Éxito Yopal,destino,0,820,,
+S19,Mercado Ganadero Yopal,destino,0,930,,
+S20,Supertiendas Paratebueno,destino,0,480,,
+S21,Mercado Paratebueno,destino,0,560,,
+S22,Supertiendas Pto. Asís,destino,0,350,,
+S23,Mercado Central Pto. Asís,destino,0,390,,
+S24,Supertiendas Neiva Centro,destino,0,470,,
+S25,Éxito Neiva,destino,0,840,,
+S26,Mercado Fusagasugá Centro,destino,0,580,,
+S27,Supertiendas Fusagasugá,destino,0,690,,
+S28,Mercado Pto. Salgar Central,destino,0,800,,
+S29,Supertiendas Pto. Salgar,destino,0,740,,
+S30,Mercado Chocontá Central,destino,0,520,,
+S31,Supertiendas Chocontá,destino,0,780,,
+S32,Mercado Pto. Gaitán Central,destino,0,640,,
+S33,Supertiendas Pto. Gaitán,destino,0,840,,
+S34,Mercado Pto. Concordia Central,destino,0,790,,
+S35,Supertiendas Pto. Concordia,destino,0,480,,
+S36,Mercado Granada Central,destino,0,570,,
+S37,Supertiendas Granada,destino,0,600,,
