@@ -647,23 +647,26 @@ elif pagina == "🧪 Escenarios What-If":
     Modifica variables clave de la red y observa cómo cambia el costo óptimo.
     El modelo se resuelve dos veces: **base** y **con el escenario**, y se comparan los resultados.
     """)
-    lista_aristas = [
-        f"{u}->{v}"
-        for u,v in G.edges()
-    ]
+    # Diccionario para convertir nombre visible -> IDs reales
+    mapa_rutas = {
+        f"{G.nodes[u]['nombre']} → {G.nodes[v]['nombre']}": (u, v)
+        for u, v in G.edges()
+    }
+
+    # Lista visible al usuario
+    lista_aristas = list(mapa_rutas.keys())
+
+    # Selector
     aristas_seleccionadas = st.multiselect(
         "Rutas afectadas",
         lista_aristas
     )
-    aristas_afectadas = []
 
-    for a in aristas_seleccionadas:
-
-        u,v = a.split("->")
-
-        aristas_afectadas.append(
-            (u,v)
-        )
+    # Convertir nombres nuevamente a IDs internos
+    aristas_afectadas = [
+        mapa_rutas[a]
+        for a in aristas_seleccionadas
+    ]
         
     # ── Resolver base primero ─────────────────────────────────────────────────
     st.info("⚙️ Primero se resuelve el modelo base para tener un punto de comparación.")
@@ -821,15 +824,17 @@ elif pagina == "🧪 Escenarios What-If":
                 from Modelo.escenarios import escenario_falla_calidad
                 r = escenario_falla_calidad(G, construir_modelo, resolver,
                                              resultado_base,
-                                             acopio_id, perdida_pct / 100)
+                                             acopio_id, aristas_afectadas, perdida_pct / 100)
  
             c1, c2, c3 = st.columns(3)
             c1.metric("Costo base",      f"${r.costo_base:,.0f} COP")
             if r.estado_escenario == "Optimal":
                 c2.metric("Costo escenario", f"${r.costo_escenario:,.0f} COP",
                           delta=f"+${r.diferencia:,.0f}")
-                c3.metric("Incremento",      f"{r.porcentaje:+.2f}%")
-                st.info(r.descripcion)
+                c3.metric(
+                    "Ganancia perdida",
+                    f"${r.perdida_ganancia:,.0f} COP"
+                )
  
                 col_b, col_e = st.columns(2)
                 with col_b:
@@ -1251,12 +1256,12 @@ elif pagina == "🚚 Método de Transporte":
     # Forzar que los acopios nunca tengan oferta ni demanda
     od_df.loc[
         od_df["tipo"] == "acopio",
-        "oferta_ton"
+        "oferta"
     ] = 0
 
     od_df.loc[
         od_df["tipo"] == "acopio",
-        "demanda_ton"
+        "demanda"
     ] = 0
 
     # Guardar cambios
@@ -1349,9 +1354,7 @@ elif pagina == "🚚 Método de Transporte":
         od_df["tipo"] == "origen"
     ]["oferta"].sum()
 
-    total_demanda = od_df[
-        od_df["tipo"] == "destino"
-    ]["demanda"].sum()
+    total_demanda = sum(st.session_state.pedidos.values())
 
     col1,col2 = st.columns(2)
 
@@ -1383,6 +1386,11 @@ elif pagina == "🚚 Método de Transporte":
     if st.button(
         "Calcular Transporte"
     ):
+        demanda = {}
+        for destino, cantidad in st.session_state.pedidos.items():
+            if cantidad > 0:
+                demanda[destino] = cantidad
+
         if total_oferta == total_demanda:
 
             st.success(
@@ -1396,22 +1404,11 @@ elif pagina == "🚚 Método de Transporte":
                 "Se agregará un destino ficticio."
             )
 
-        else:
-
-            st.warning(
-                "La demanda es mayor que la oferta. "
-                "Se agregará un origen ficticio."
-            )
         oferta = {
             fila["id_nodo"]: fila["oferta"]
             for _, fila in od_df.iterrows()
             if fila["tipo"] == "origen"
         }
-
-        demanda = {}
-        for destino, cantidad in st.session_state.pedidos.items():
-            if cantidad > 0:
-                demanda[destino] = cantidad
 
         costos, rutas = construir_matriz_costos(
             G,

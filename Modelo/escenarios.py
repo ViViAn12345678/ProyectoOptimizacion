@@ -16,16 +16,19 @@ from dataclasses import dataclass
 
 @dataclass
 class ResultadoEscenario:
-    nombre:           str
-    costo_base:       float
-    costo_escenario:  float
-    diferencia:       float
-    porcentaje:       float
-    estado_base:      str
-    estado_escenario: str
-    df_base:          pd.DataFrame
-    df_escenario:     pd.DataFrame
-    descripcion:      str
+    nombre: str
+    costo_base: float
+    costo_escenario: float
+    diferencia: float
+    porcentaje: float
+    ganancia_base: float = 0
+    ganancia_escenario: float = 0
+    perdida_ganancia: float = 0
+    estado_base: str = ""
+    estado_escenario: str = ""
+    df_base: pd.DataFrame = None
+    df_escenario: pd.DataFrame = None
+    descripcion: str = ""
 
 
 def _resolver_sobre(G_mod, construir_modelo_fn, resolver_fn):
@@ -54,7 +57,8 @@ def escenario_combustible(
         if G_mod.has_edge(u,v):
             G_mod[u][v]["costo_unitario"] *= factor
             G_mod[u][v]["peso"] *= factor
-
+            afectadas += 1
+            
     resultado_mod = _resolver_sobre(G_mod, construir_modelo_fn, resolver_fn)
     costo_base = resultado_base["costo_total"]
     costo_mod  = resultado_mod["costo_total"]
@@ -151,6 +155,7 @@ def escenario_cierre_via(G, construir_modelo_fn, resolver_fn,
 def escenario_falla_calidad(G, construir_modelo_fn, resolver_fn,
                               resultado_base: dict,
                               nodo_acopio: str,
+                              aristas_afectadas,
                               perdida: float = 0.40) -> ResultadoEscenario:
     """
     Reduce la capacidad del acopio y de todas sus aristas de salida.
@@ -162,18 +167,59 @@ def escenario_falla_calidad(G, construir_modelo_fn, resolver_fn,
         G_mod.nodes[nodo_acopio]["calidad"] = 0
     
     nombre_acopio = G_mod.nodes[nodo_acopio]["nombre"]
-    
-    afectadas = 0
 
-    for _, v in list(G_mod.out_edges(nodo_acopio)):
-        G_mod[nodo_acopio][v]["capacidad"] *= (1 - perdida)
-        afectadas += 1
+    # Capacidad original del acopio
+    capacidad_original = G.nodes[nodo_acopio]["capacidad"]
 
-    G_mod.nodes[nodo_acopio]["capacidad"] *= (1 - perdida)
+    # Toneladas afectadas por la falla
+    toneladas_perdidas = capacidad_original * perdida
 
-    resultado_mod = _resolver_sobre(G_mod, construir_modelo_fn, resolver_fn)
+    afectadas = len(list(G_mod.out_edges(nodo_acopio)))
+
+    resultado_mod = _resolver_sobre(
+        G_mod,
+        construir_modelo_fn,
+        resolver_fn
+    )
+
+    ganancia_base = resultado_base["ganancia"]
+
+    perdida_ganancia = 0
+
+    df_base = resultado_base["df_flujos"]
+
+    for u, v in aristas_afectadas:
+
+        if not G.has_edge(u, v):
+            continue
+
+        nombre_origen = G.nodes[u]["nombre"]
+        nombre_destino = G.nodes[v]["nombre"]
+
+        flujo_ruta = df_base[
+            (df_base["origen"] == nombre_origen) &
+            (df_base["destino"] == nombre_destino)
+        ]["toneladas"].sum()
+
+        toneladas_perdidas_ruta = flujo_ruta * perdida
+
+        costo_unitario_ruta = G[u][v]["peso"]
+
+        perdida_ganancia += (
+            toneladas_perdidas_ruta *
+            costo_unitario_ruta
+        )
+
     costo_base = resultado_base["costo_total"]
     costo_mod  = resultado_mod["costo_total"]
+
+    ganancia_base = resultado_base["ganancia"]
+
+    ganancia_escenario = (
+        ganancia_base -
+        perdida_ganancia
+    )
+
     diff = costo_mod - costo_base
     pct  = (diff / costo_base * 100) if costo_base else 0
     estado_mod = resultado_mod["estado"]
@@ -181,25 +227,31 @@ def escenario_falla_calidad(G, construir_modelo_fn, resolver_fn,
     if estado_mod != "Optimal":
         descripcion = (
             f"Falla de calidad del {round(perdida*100)}% en {nombre_acopio}. "
-            f"⚠️ La red quedó INFACTIBLE — la pérdida de capacidad es tan grande "
-            f"que no puede satisfacerse toda la demanda. "
-            f"Se deben activar rutas de contingencia o reducir demanda."
+            f"Se estiman {toneladas_perdidas:.2f} toneladas afectadas, "
+            f"equivalentes a una pérdida económica de "
+            f"${perdida_ganancia:,.0f} COP. "
+            f"⚠️ La red quedó INFACTIBLE porque la capacidad restante "
+            f"no permite satisfacer toda la demanda."
         )
     else:
         descripcion = (
             f"Falla de calidad del {round(perdida*100)}% en {nombre_acopio}. "
-            f"Capacidad reducida en {afectadas} rutas de salida y en el nodo mismo. "
-            f"El modelo redistribuyó flujos con un impacto de "
-            f"${diff:,.0f} COP ({pct:+.1f}%). "
-            f"Si la pérdida supera la capacidad necesaria, la red se vuelve infactible."
+            f"Se estiman {toneladas_perdidas:.2f} toneladas defectuosas. "
+            f"La pérdida económica calculada sobre las rutas afectadas es de "
+            f"${perdida_ganancia:,.0f} COP. "
+            f"La ganancia del sistema disminuye de "
+            f"${ganancia_base:,.0f} COP a "
+            f"${ganancia_escenario:,.0f} COP."
         )
-
     return ResultadoEscenario(
         nombre           = f"Falla calidad {round(perdida*100)}% — {nombre_acopio}",
         costo_base       = costo_base,
         costo_escenario  = costo_mod,
         diferencia       = diff,
         porcentaje       = round(pct, 2),
+        ganancia_base = ganancia_base,
+        ganancia_escenario = ganancia_escenario,
+        perdida_ganancia = perdida_ganancia,
         estado_base      = resultado_base["estado"],
         estado_escenario = estado_mod,
         df_base          = resultado_base["df_flujos"],
