@@ -46,8 +46,8 @@ import pandas as pd
 
 # ─── PARÁMETROS DE CAMIONES ───────────────────────────────────────────────────
 CAMIONES = {
-    "pequeño": {"capacidad": 5,  "costo_fijo": 800000},
-    "grande":  {"capacidad": 15, "costo_fijo": 2000000},
+    "pequeño": {"capacidad": 5,  "costo_fijo": 800_000},
+    "grande":  {"capacidad": 15, "costo_fijo": 1_000_000},
 }
 MERMA = 0.98
 
@@ -168,13 +168,13 @@ def resolver(G, modelo, x, n):
                 "costo_ruta_COP": round(peso * flujo + CAMIONES[k]["costo_fijo"] * viajes, 0),
             })
  # --- SEGMENTO FINANCIERO ---
-    COSTO_PRODUCCION_TON = 9000000
+    COSTO_PRODUCCION_TON = 9_000_000
     ingresos         = 0
     costo_produccion = 0
     for nodo, datos in G.nodes(data=True):
         if datos.get("tipo") == "destino":
             demanda     = datos.get("demanda", 0)
-            precio      = datos.get("precio_venta", 1200000000)
+            precio      = datos.get("precio_venta", 12_000_000)
             ingresos         += demanda * precio
             costo_produccion += demanda * COSTO_PRODUCCION_TON
 
