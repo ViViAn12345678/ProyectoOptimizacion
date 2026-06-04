@@ -46,8 +46,8 @@ import pandas as pd
 
 # ─── PARÁMETROS DE CAMIONES ───────────────────────────────────────────────────
 CAMIONES = {
-    "pequeño": {"capacidad": 5,  "costo_fijo": 80_000},
-    "grande":  {"capacidad": 15, "costo_fijo": 180_000},
+    "pequeño": {"capacidad": 5,  "costo_fijo": 800000},
+    "grande":  {"capacidad": 15, "costo_fijo": 2000000},
 }
 MERMA = 0.98
 
